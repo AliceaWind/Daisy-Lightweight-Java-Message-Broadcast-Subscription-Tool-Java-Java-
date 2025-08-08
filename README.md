@@ -50,9 +50,7 @@ Daisy 是一个单文件、零依赖的 Java 工具类，用于实现跨类的�
 灵活订阅：支持订阅指定主题或全部主题。
 
 用法
-java
-复制
-编辑
+
 ```java
 
 import daisy.Daisy;
@@ -90,9 +88,7 @@ null トピック安全処理：null キーの hashCode() 問題を修正。
 柔軟な購読：特定のトピックまたは全トピックを購読可能。
 
 使用例
-java
-复制
-编辑
+
 
 ```java
 import daisy.Daisy;
