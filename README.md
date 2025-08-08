@@ -6,7 +6,7 @@ A single-file, zero-dependency Java utility for thread-safe message broadcasting
 
 Daisy is a **single-file, zero-dependency** Java utility class for **thread-safe message broadcasting and subscription** between classes.
 
-### Features
+Features
 - **Single file**: Just download `Daisy.java` and put it into your project.
 - **Zero dependencies**: Works with standard Java SE.
 - **Thread-safe**: Uses `ConcurrentHashMap` and `CopyOnWriteArrayList`.
@@ -33,6 +33,7 @@ public class MyClass extends Daisy {
         b.broadcast("myTopic", "Hello World!");
     }
 }
+```
 
 
 Daisy 是一个单文件、零依赖的 Java 工具类，用于实现跨类的线程安全消息广播与订阅。
