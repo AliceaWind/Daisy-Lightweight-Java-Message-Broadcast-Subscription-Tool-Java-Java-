@@ -48,25 +48,58 @@ null トピック安全処理：null キーの hashCode() 問題を修正。
 
 柔軟な購読：特定のトピックまたは全トピックを購読可能。
 
-
 Usage
+
 ```java
 import daisy.Daisy;
 
-public class MyClass extends Daisy {
-    public MyClass() {
-        setSubscriber("myTopic"); // subscribe to topic
+public class Sender{
+    private final Daisy daisy = new Daisy();
+
+    public void sendASentence() throws InterruptedException {
+        System.out.println("[Sender] Preparing to send...");
+        Thread.sleep(1000); // 模拟耗时
+        daisy.broadcast("thiser", "Hello from Sender!");
+        System.out.println("[Sender] Message sent!");
+    }
+}
+```
+
+
+
+```java
+import daisy.Daisy;
+
+public class Reader extends Daisy {
+    public void startReading() {
+        // 订阅主题 "thiser"
+        setSubscriber("thiser");
     }
 
+    // 关键修改：重写 onMessage 方法（而非自定义 receive 方法）
     @Override
-    public void receive(String topic, Object content, long timestamp) {
-        System.out.println("Received on " + topic + ": " + content);
+    protected void onMessage(String topic, Object content, long timestamp) {
+        System.out.println("[Reader] Received on " + topic + ": " + content
+                + " (timestamp: " + timestamp + ")");
     }
 
-    public static void main(String[] args) {
-        MyClass a = new MyClass();
-        MyClass b = new MyClass();
-        b.broadcast("myTopic", "Hello World!");
+    public static void main(String[] args) throws InterruptedException {
+        // （main 方法代码不变）
+        Reader reader = new Reader();
+        reader.startReading();
+
+        Sender sender = new Sender();
+
+        Thread senderThread = new Thread(() -> {
+            try {
+                sender.sendASentence();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+
+        senderThread.start();
+        senderThread.join();
     }
 }
 ```
