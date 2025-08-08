@@ -13,7 +13,7 @@ Daisy is a **single-file, zero-dependency** Java utility class for **thread-safe
 - **Null-safe topic handling**: Fixes `null` key `hashCode()` issues.
 - **Flexible**: Subscribe to specific topics or all topics.
 
-### Usage
+Usage
 ```java
 import daisy.Daisy;
 
@@ -33,6 +33,7 @@ public class MyClass extends Daisy {
         b.broadcast("myTopic", "Hello World!");
     }
 }
+
 
 Daisy 是一个单文件、零依赖的 Java 工具类，用于实现跨类的线程安全消息广播与订阅。
 
