@@ -1,0 +1,327 @@
+# Daisy 轻量级插件通信库使用说明书  
+# Daisy Lightweight Plugin Communication Library User Manual  
+# Daisy軽量プラグイン通信ライブラリ ユーザーマニュアル
+
+---
+
+## 中文版 (Chinese)
+
+### 概述
+Daisy 是一个轻量级的 Java 插件通信库，旨在实现基于主题（Topic）的消息广播与响应机制。它支持发布/订阅模式，允许对象注册为特定主题的订阅者，并在消息广播时接收通知。Daisy 提供了两种使用方式：基于接口的 `MessageCenter` 模式和基于继承的 `Daisy` 类模式，适用于不同复杂度的场景。
+
+### 核心特性
+- **主题订阅**：支持订阅特定主题或所有主题。
+- **消息广播**：支持单向广播和带返回值的广播（收集响应）。
+- **线程安全**：使用 `ConcurrentHashMap` 和 `CopyOnWriteArrayList` 保证多线程环境下的安全性。
+- **灵活扩展**：支持继承 `Daisy` 类或实现 `MessageSubscriber` 接口。
+
+---
+
+### 使用方式一：继承 Daisy 类（推荐用于简单场景）
+
+#### 1. 创建订阅者
+让需要接收消息的类继承 `Daisy` 类，并重写 `onMessage` 方法。
+
+```java
+public class MyComponent extends Daisy {
+    @Override
+    protected Object onMessage(String topic, Object content, long timestamp) {
+        System.out.println("收到消息 - 主题: " + topic + ", 内容: " + content);
+        // 可返回处理结果
+        return "Processed: " + content;
+    }
+}
+```
+
+#### 2. 注册订阅
+调用 `setSubscriber(topic)` 注册到指定主题，或传入 `null` 订阅所有主题。
+
+```java
+MyComponent component = new MyComponent();
+component.setSubscriber("chat");        // 只接收 "chat" 主题消息
+component.setSubscriber(null);          // 接收所有主题消息
+```
+
+#### 3. 广播消息
+通过任意 `Daisy` 实例调用 `broadcast` 或 `broadcastWithReply` 发送消息。
+
+```java
+// 单向广播
+component.broadcast("chat", "Hello World!");
+
+// 带响应的广播（收集所有订阅者的返回值）
+List<Object> replies = component.broadcastWithReply("chat", "Hello Everyone!");
+```
+
+#### 4. 取消订阅
+调用 `removeSubscriber(topic)` 取消订阅。
+
+```java
+component.removeSubscriber("chat");
+```
+
+---
+
+### 使用方式二：使用 MessageCenter（推荐用于复杂系统）
+
+#### 1. 定义消息类
+实现 `Message` 接口创建消息对象。
+
+```java
+Message msg = new MessageClass("user.login", userId);
+```
+
+#### 2. 创建订阅者
+实现 `MessageSubscriber` 接口。
+
+```java
+public class UserLogger implements MessageSubscriber {
+    @Override
+    public void subscribe(Message message) {
+        if ("user.login".equals(message.getTopic())) {
+            System.out.println("用户登录: " + message.getContent());
+        }
+    }
+}
+```
+
+#### 3. 注册与广播
+通过单例 `MessageCenter` 管理订阅和广播。
+
+```java
+MessageCenter center = MessageCenter.getInstance();
+
+// 注册订阅者
+UserLogger logger = new UserLogger();
+center.registerSubscriber(logger);
+
+// 广播消息
+center.broadcast(new MessageClass("user.login", "user123"));
+
+// 取消注册
+center.unregisterSubscriber(logger);
+```
+
+---
+
+### 注意事项
+- `broadcastWithReply` 会自动忽略返回值为 `null` 的响应。
+- 继承模式下，`broadcast` 方法内部调用 `broadcastWithReply` 但忽略返回值，保持兼容性。
+- `MessageCenter` 为线程安全单例，可全局使用。
+- 建议在对象销毁时调用 `removeSubscriber` 避免内存泄漏。
+
+---
+
+## English Version
+
+### Overview
+Daisy is a lightweight Java plugin communication library designed to implement a topic-based message broadcasting and response mechanism. It supports the publish/subscribe pattern, allowing objects to register as subscribers for specific topics and receive notifications when messages are broadcast. Daisy provides two usage modes: the interface-based `MessageCenter` mode and the inheritance-based `Daisy` class mode, suitable for different complexity scenarios.
+
+### Core Features
+- **Topic Subscription**: Supports subscribing to specific topics or all topics.
+- **Message Broadcasting**: Supports one-way broadcasting and reply-collecting broadcasting.
+- **Thread Safety**: Uses `ConcurrentHashMap` and `CopyOnWriteArrayList` to ensure thread safety.
+- **Flexible Extension**: Supports extending the `Daisy` class or implementing the `MessageSubscriber` interface.
+
+---
+
+### Usage 1: Inheriting the Daisy Class (Recommended for Simple Scenarios)
+
+#### 1. Create a Subscriber
+Let your class extend `Daisy` and override the `onMessage` method.
+
+```java
+public class MyComponent extends Daisy {
+    @Override
+    protected Object onMessage(String topic, Object content, long timestamp) {
+        System.out.println("Received message - Topic: " + topic + ", Content: " + content);
+        // Can return processing result
+        return "Processed: " + content;
+    }
+}
+```
+
+#### 2. Register Subscription
+Call `setSubscriber(topic)` to subscribe to a specific topic, or pass `null` to subscribe to all topics.
+
+```java
+MyComponent component = new MyComponent();
+component.setSubscriber("chat");        // Only receive messages from "chat" topic
+component.setSubscriber(null);          // Receive messages from all topics
+```
+
+#### 3. Broadcast Messages
+Call `broadcast` or `broadcastWithReply` from any `Daisy` instance to send messages.
+
+```java
+// One-way broadcast
+component.broadcast("chat", "Hello World!");
+
+// Broadcast with replies (collect return values from all subscribers)
+List<Object> replies = component.broadcastWithReply("chat", "Hello Everyone!");
+```
+
+#### 4. Unsubscribe
+Call `removeSubscriber(topic)` to unsubscribe.
+
+```java
+component.removeSubscriber("chat");
+```
+
+---
+
+### Usage 2: Using MessageCenter (Recommended for Complex Systems)
+
+#### 1. Define Message Class
+Implement the `Message` interface to create message objects.
+
+```java
+Message msg = new MessageClass("user.login", userId);
+```
+
+#### 2. Create Subscriber
+Implement the `MessageSubscriber` interface.
+
+```java
+public class UserLogger implements MessageSubscriber {
+    @Override
+    public void subscribe(Message message) {
+        if ("user.login".equals(message.getTopic())) {
+            System.out.println("User logged in: " + message.getContent());
+        }
+    }
+}
+```
+
+#### 3. Register and Broadcast
+Use the singleton `MessageCenter` to manage subscriptions and broadcasting.
+
+```java
+MessageCenter center = MessageCenter.getInstance();
+
+// Register subscriber
+UserLogger logger = new UserLogger();
+center.registerSubscriber(logger);
+
+// Broadcast message
+center.broadcast(new MessageClass("user.login", "user123"));
+
+// Unregister
+center.unregisterSubscriber(logger);
+```
+
+---
+
+### Notes
+- `broadcastWithReply` automatically ignores responses with `null` return values.
+- In inheritance mode, the `broadcast` method internally calls `broadcastWithReply` but ignores the return value for compatibility.
+- `MessageCenter` is a thread-safe singleton, safe for global use.
+- Always call `removeSubscriber` when destroying objects to avoid memory leaks.
+
+---
+
+## 日本語版 (Japanese)
+
+### 概要
+Daisy は、トピックベースのメッセージブロードキャストと応答メカニズムを実装するための軽量な Java プラグイン通信ライブラリです。パブリッシュ/サブスクライブパターンをサポートしており、オブジェクトを特定トピックのサブスクライバとして登録し、メッセージがブロードキャストされたときに通知を受信できます。Daisy は、インターフェースベースの `MessageCenter` モードと継承ベースの `Daisy` クラスモードの2つの使用方法を提供しており、複雑度の異なるシナリオに適しています。
+
+### 主な機能
+- **トピック購読**：特定のトピックまたはすべてのトピックを購読可能。
+- **メッセージブロードキャスト**：一方向ブロードキャストと応答収集型ブロードキャストをサポート。
+- **スレッドセーフ**：`ConcurrentHashMap` と `CopyOnWriteArrayList` を使用し、スレッドセーフを保証。
+- **柔軟な拡張性**：`Daisy` クラスの継承または `MessageSubscriber` インターフェースの実装が可能。
+
+---
+
+### 使用方法1：Daisy クラスを継承（シンプルなシナリオに推奨）
+
+#### 1. サブスクライバの作成
+`Daisy` クラスを継承し、`onMessage` メソッドをオーバーライドします。
+
+```java
+public class MyComponent extends Daisy {
+    @Override
+    protected Object onMessage(String topic, Object content, long timestamp) {
+        System.out.println("メッセージ受信 - トピック: " + topic + ", 内容: " + content);
+        // 処理結果を返すことも可能
+        return "処理済み: " + content;
+    }
+}
+```
+
+#### 2. 購読登録
+`setSubscriber(topic)` を呼び出して特定トピックを登録、または `null` を渡してすべてのトピックを購読。
+
+```java
+MyComponent component = new MyComponent();
+component.setSubscriber("chat");        // 「chat」トピックのメッセージのみ受信
+component.setSubscriber(null);          // すべてのトピックのメッセージを受信
+```
+
+#### 3. メッセージのブロードキャスト
+任意の `Daisy` インスタンスから `broadcast` または `broadcastWithReply` を呼び出して送信。
+
+```java
+// 一方向ブロードキャスト
+component.broadcast("chat", "Hello World!");
+
+// 応答付きブロードキャスト（サブスクライバの返値を収集）
+List<Object> replies = component.broadcastWithReply("chat", "Hello Everyone!");
+```
+
+#### 4. 購読解除
+`removeSubscriber(topic)` を呼び出して購読を解除。
+
+```java
+component.removeSubscriber("chat");
+```
+
+---
+
+### 使用方法2：MessageCenter の使用（複雑なシステムに推奨）
+
+#### 1. メッセージクラスの定義
+`Message` インターフェースを実装してメッセージオブジェクトを作成。
+
+```java
+Message msg = new MessageClass("user.login", userId);
+```
+
+#### 2. サブスクライバの作成
+`MessageSubscriber` インターフェースを実装。
+
+```java
+public class UserLogger implements MessageSubscriber {
+    @Override
+    public void subscribe(Message message) {
+        if ("user.login".equals(message.getTopic())) {
+            System.out.println("ユーザーがログイン: " + message.getContent());
+        }
+    }
+}
+```
+
+#### 3. 登録とブロードキャスト
+シングルトンの `MessageCenter` を使用して購読管理とブロードキャストを行う。
+
+```java
+MessageCenter center = MessageCenter.getInstance();
+
+// サブスクライバ登録
+UserLogger logger = new UserLogger();
+center.registerSubscriber(logger);
+
+// メッセージブロードキャスト
+center.broadcast(new MessageClass("user.login", "user123"));
+
+// 登録解除
+center.unregisterSubscriber(logger);
+```
+
+---
+
+### 注意事項
+- `broadcastWithReply` は `null` を返す応答を自動的に無視します。
+- 継承モードでは、`broadcast` メソッドが内部で `broadcastWithReply` を呼び出しますが、返値は無視され、互換性が保たれます。
+- `MessageCenter` はスレッドセーフなシングルトンであり、グローバルに使用可能です。
+- オブジェクト破棄時に `removeSubscriber` を呼び出し、メモリリークを防いでください。
