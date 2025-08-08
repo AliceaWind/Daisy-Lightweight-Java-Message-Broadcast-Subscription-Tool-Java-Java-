@@ -3,6 +3,8 @@ A single-file, zero-dependency Java utility for thread-safe message broadcasting
 一个零依赖、单文件的 Java 工具类，实现跨类线程安全的消息广播与订阅。下载即用。
 ゼロ依存、単一ファイルのJavaユーティリティ。スレッドセーフなクラス間メッセージのブロードキャストと購読を簡単に実装できます。
 
+If you like Daisy, please ⭐ it on GitHub!
+
 
 Daisy is a **single-file, zero-dependency** Java utility class for **thread-safe message broadcasting and subscription** between classes.
 
